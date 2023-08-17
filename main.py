@@ -1,6 +1,8 @@
 import subprocess
 import smtplib
 from decouple import config
+from datetime import datetime
+
 
 # Read variables from .env file
 php_localization = config('PHP_LOCALIZATION')
@@ -10,9 +12,8 @@ recipient = config('RECIPIENT')
 gmail_user = config('GMAIL_USER')
 gmail_app_password = config('GMAIL_APP_PASSWORD')
 
-print(php_localization)
 #standard output Out of host capacity
-expected_output = '{"code": "InternalError", "message": "Out of host capacity."}'
+expected_output = '{"code":"InternalError","message":"Outofhostcapacity."}'
 
 
 def send_email(to, subject, body, gmail_user, gmail_password):
@@ -42,12 +43,15 @@ def send_email(to, subject, body, gmail_user, gmail_password):
 # Execute PHP script and capture output
 output = subprocess.getoutput(f"{php_localization} {php_script}")
 
+timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 # Append output to log file
 with open(log_file, "a") as f:
-    f.write(output + "\n")
+    f.write(f"{timestamp} - {output}\n")
+
 
 # Check if output matches expected output
-if expected_output not in output:
+if expected_output not in output.replace(" ", "").replace("\n", ""):
     # Send an email if output does not match
     send_email(to=[recipient],
                subject='Notification - PHP script to create oracle cloud VM',
@@ -55,4 +59,5 @@ if expected_output not in output:
                gmail_user=gmail_user,
                gmail_password=gmail_app_password,
                )
-
+else:
+    print("execution finished, out of capacity")
